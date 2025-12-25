@@ -1,0 +1,2006 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=3.0, user-scalable=yes">
+    <title>🎄 3D圣诞树 - 送给最爱的你</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: linear-gradient(180deg, #0a0a1a 0%, #1a1a3a 50%, #0a0a2a 100%);
+            font-family: 'Segoe UI', sans-serif;
+            touch-action: none;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        
+        #canvas-container {
+            width: 100%;
+            height: 100%;
+            position: fixed;
+            top: 0;
+            left: 0;
+        }
+        
+        #photo-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999 !important;
+        }
+        
+        #photo-modal.show {
+            display: flex !important;
+        }
+        
+        #photo-modal.active {
+            display: flex !important;
+        }
+        
+        #modal-photo {
+            max-width: 90%;
+            max-height: 80%;
+            object-fit: contain;
+            border-radius: 15px;
+            box-shadow: 0 0 50px rgba(255, 215, 0, 0.5);
+            position: relative;
+            z-index: 5;
+        }
+        
+        #photo-modal.active #photo-container.zoomed .heart-border {
+            display: none !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
+        }
+        
+        html body #photo-modal.active #photo-container.zoomed {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            bottom: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            max-width: 100vw !important;
+            max-height: 100vh !important;
+            display: flex !important;
+            justify-content: center !important;
+            align-items: center !important;
+            background-color: #000000 !important;
+            z-index: 9999 !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            overflow: hidden !important;
+        }
+        
+        html body #photo-modal.active #photo-container.zoomed #modal-photo {
+            position: absolute !important;
+            top: 50% !important;
+            left: 50% !important;
+            transform: translate(-50%, -50%) !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            max-width: 100vw !important;
+            max-height: 100vh !important;
+            object-fit: contain !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            background-color: transparent !important;
+        }
+        
+        #photo-count {
+            position: absolute;
+            bottom: 30px;
+            color: white;
+            font-size: 16px;
+            opacity: 0.8;
+            z-index: 2002;
+        }
+        
+        .photo-gallery {
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 15px;
+            z-index: 100;
+        }
+        
+        #photo-container {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .heart-border {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: calc(100% + 40px);
+            height: calc(100% + 40px);
+            pointer-events: none;
+            z-index: 10;
+        }
+        
+        #close-btn {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            width: 50px;
+            height: 50px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+        
+        #close-btn:hover {
+            background: rgba(255, 255, 255, 0.4);
+            transform: scale(1.1);
+        }
+        
+        #photo-count {
+            position: absolute;
+            bottom: 30px;
+            color: white;
+            font-size: 16px;
+            opacity: 0.8;
+        }
+        
+        .photo-gallery {
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 15px;
+            z-index: 100;
+        }
+        
+        .gallery-photo {
+            width: 60px;
+            height: 60px;
+            border-radius: 10px;
+            object-fit: cover;
+            border: 3px solid rgba(255, 215, 0, 0.6);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+        }
+        
+        .gallery-photo:hover, .gallery-photo.active {
+            transform: scale(1.2);
+            border-color: #ffd700;
+            box-shadow: 0 0 25px rgba(255, 215, 0, 0.8);
+        }
+        
+        #title {
+            position: fixed;
+            top: 30px;
+            width: 100%;
+            text-align: center;
+            color: #fff;
+            font-size: 28px;
+            text-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
+            z-index: 50;
+            pointer-events: none;
+            animation: titleGlow 2s ease-in-out infinite;
+        }
+        
+        @keyframes titleGlow {
+            0%, 100% { text-shadow: 0 0 20px rgba(255, 215, 0, 0.8); }
+            50% { text-shadow: 0 0 40px rgba(255, 215, 0, 1), 0 0 60px rgba(255, 100, 100, 0.5); }
+        }
+        
+        #hint {
+            position: fixed;
+            bottom: 20px;
+            width: 100%;
+            text-align: center;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 13px;
+            z-index: 50;
+        }
+        
+        #snow-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+        
+        .snowflake {
+            position: absolute;
+            color: white;
+            font-size: 15px;
+            opacity: 0.8;
+            animation: fall linear infinite;
+            text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+        }
+        
+        @keyframes fall {
+            0% {
+                transform: translateY(-10px) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(100vh) rotate(360deg);
+                opacity: 0.3;
+            }
+        }
+        
+        #loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #0a0a1a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            transition: opacity 0.5s ease;
+        }
+        
+        #loading.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        .loader {
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(255, 215, 0, 0.3);
+            border-top-color: #ffd700;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        #music-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 50px;
+            height: 50px;
+            background: rgba(255, 215, 0, 0.2);
+            border: 2px solid rgba(255, 215, 0, 0.5);
+            border-radius: 50%;
+            font-size: 24px;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            transition: all 0.3s ease;
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        #music-btn:hover {
+            background: rgba(255, 215, 0, 0.4);
+            transform: scale(1.1);
+        }
+        
+        #music-btn.music-playing {
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        #music-btn.music-paused {
+            animation: none;
+            opacity: 0.6;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 10px rgba(255, 215, 0, 0.5); }
+            50% { box-shadow: 0 0 25px rgba(255, 215, 0, 0.8); }
+        }
+
+        #background-container {
+            width: 100%;
+            height: 100%;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: -1;
+        }
+
+        .bg-image {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            object-fit: cover;
+            opacity: 0;
+            transition: opacity 1s ease-in-out;
+        }
+
+        .bg-image.active {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <div id="loading">
+        <div class="loader"></div>
+    </div>
+
+    <div id="background-container">
+        <img class="bg-image active" src="061eb05e60c18dd131b6a44b54c37079.jpg" alt="背景1">
+        <img class="bg-image" src="1dfce52536fef87edf69f4f4eb38f760.jpg" alt="背景2">
+        <img class="bg-image" src="518725f26bc7b4a8ed6a1e2f8440fb4a.jpg" alt="背景3">
+        <img class="bg-image" src="ab99d387ee7f91a2f5eab71aec5d48ca.jpg" alt="背景4">
+        <img class="bg-image" src="fee95c3bbd94acdd34a5db9dff8394a9.jpg" alt="背景5">
+    </div>
+    
+    <div id="snow-container"></div>
+    
+    <div id="canvas-container"></div>
+    
+    <h1 id="title">🎄 Merry Christmas 🎄</h1>
+    
+    <div class="photo-gallery">
+        <img class="gallery-photo active" data-index="0" src="061eb05e60c18dd131b6a44b54c37079.jpg" alt="照片1">
+        <img class="gallery-photo" data-index="1" src="1dfce52536fef87edf69f4f4eb38f760.jpg" alt="照片2">
+        <img class="gallery-photo" data-index="2" src="518725f26bc7b4a8ed6a1e2f8440fb4a.jpg" alt="照片3">
+        <img class="gallery-photo" data-index="3" src="ab99d387ee7f91a2f5eab71aec5d48ca.jpg" alt="照片4">
+        <img class="gallery-photo" data-index="4" src="fee95c3bbd94acdd34a5db9dff8394a9.jpg" alt="照片5">
+    </div>
+    
+    <div id="photo-modal">
+        <div id="close-btn">✕</div>
+        <div id="photo-container">
+            <div class="heart-border"></div>
+            <img id="modal-photo" src="" alt="照片预览">
+        </div>
+        <div id="photo-count">1 / 5</div>
+        <div id="zoom-hint" style="display: none; position: fixed; bottom: 50px; left: 50%; transform: translateX(-50%); color: white; font-size: 14px; opacity: 0.8; text-shadow: 0 0 10px rgba(255, 215, 0, 0.8);">💡 双击图片返回</div>
+    </div>
+    
+    <div id="hint">点击粒子/雪花爆炸 · 点击照片放大预览 · 点击右下角播放音乐</div>
+    
+    <audio id="bgm" preload="auto">
+        <source src="苏打绿+-+小情歌.mp3" type="audio/mpeg">
+    </audio>
+    
+    <div id="music-btn" class="music-playing">🎵</div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // ========== 配置 ==========
+        const CONFIG = {
+            photos: [
+                '061eb05e60c18dd131b6a44b54c37079.jpg',
+                '1dfce52536fef87edf69f4f4eb38f760.jpg',
+                '518725f26bc7b4a8ed6a1e2f8440fb4a.jpg',
+                'ab99d387ee7f91a2f5eab71aec5d48ca.jpg',
+                'fee95c3bbd94acdd34a5db9dff8394a9.jpg'
+            ],
+            treeColor: 0x1a5f1a,
+            ornamentColors: [0xff0000, 0xffd700, 0x0066ff, 0xff69b4, 0x00ff00],
+            particleCount: 5000
+        };
+        
+        let currentPhotoIndex = 0;
+        let scene, camera, renderer;
+        let christmasTree, star, ornaments = [], bells = [];
+        let snowflakes = [];
+        let galaxyParticles = [];
+        let galaxyStars = [];
+        let galaxyCore = null;
+        let photoDisplay = null;
+        let photoDisplayMesh = null;
+        let photoDisplayTexture = null;
+        let isPhotoDisplayVisible = false;
+        let isPhotoZoomed = false;
+        let photoDisplayClickCount = 0;
+        let photoDisplayClickTimer = null;
+        let snowflakesExploded = false;
+        let isDragging = false;
+        let previousMousePosition = { x: 0, y: 0 };
+        let targetRotation = { x: 0, y: 0 };
+        let currentRotation = { x: 0, y: 0 };
+        let cameraDistance = 12;
+        let targetCameraDistance = 12;
+        let pinchStartDistance = 0;
+        let initialCameraDistance = 12;
+        let particlesExploded = false;
+        let explosionProgress = 0;
+        let treeRotationSpeed = 2.5;
+        let targetTreeRotationSpeed = 2.5;
+        let autoRotateTime = 0;
+        let explosionCenter = new THREE.Vector3();
+        let originalParticlePositions = null;
+        let raycaster, mouse;
+        let photoScale = 1;
+        let photoPinchStartDistance = 0;
+        let photoInitialScale = 1;
+        let autoRotate = true;
+        let photoZoomed = false;
+        
+        // ========== 初始化 ==========
+        function init() {
+            initThree();
+            createChristmasTree();
+            createStar();
+            createOrnaments();
+            createBells();
+            createLights();
+            createPhotoDisplay();
+            createParticles();
+            createSnow();
+            setupEventListeners();
+            animate();
+            hideLoading();
+        }
+        
+        function initThree() {
+            scene = new THREE.Scene();
+            scene.fog = new THREE.FogExp2(0x0a0a2a, 0.02);
+            
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 3, cameraDistance);
+            
+            renderer = new THREE.WebGLRenderer({ 
+                canvas: document.createElement('canvas'),
+                antialias: true,
+                alpha: true
+            });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            document.getElementById('canvas-container').appendChild(renderer.domElement);
+            
+            raycaster = new THREE.Raycaster();
+            mouse = new THREE.Vector2();
+        }
+        
+        // ========== 创建栗子形圣诞树 ==========
+        function createChristmasTree() {
+            const treeGroup = new THREE.Group();
+            
+            // 树冠层 - 栗子形状（椭圆形锥体）
+            const layers = [
+                { y: 0, radius: 2.8, height: 3, segments: 32 },
+                { y: 2.5, radius: 2.2, height: 2.5, segments: 28 },
+                { y: 4.5, radius: 1.6, height: 2, segments: 24 },
+                { y: 6.2, radius: 1.0, height: 1.5, segments: 20 },
+                { y: 7.5, radius: 0.5, height: 1, segments: 16 }
+            ];
+            
+            layers.forEach((layer, index) => {
+                // 栗子形状的几何体 - 使用椭球体和圆锥的混合
+                const geometry = new THREE.ConeGeometry(layer.radius, layer.height, layer.segments);
+                
+                // 修改顶点以创建栗子形状
+                const positions = geometry.attributes.position;
+                for (let i = 0; i < positions.count; i++) {
+                    const y = positions.getY(i);
+                    const normalizedY = (y + layer.height / 2) / layer.height;
+                    
+                    // 栗子形状的宽度变化
+                    const chestnutFactor = Math.sin(normalizedY * Math.PI) * 0.15;
+                    const currentRadius = positions.getX(i);
+                    const scaleFactor = 1 - chestnutFactor + (Math.random() - 0.5) * 0.1;
+                    
+                    positions.setX(i, currentRadius * scaleFactor);
+                    positions.setZ(i, positions.getZ(i) * (1 - chestnutFactor * 0.5));
+                }
+                geometry.computeVertexNormals();
+                
+                // 五彩颜色 - 每层使用不同的色相
+                const hue = (index * 0.12 + 0.08) % 1; // 彩虹色相分布
+                const material = new THREE.MeshPhongMaterial({
+                    color: new THREE.Color().setHSL(hue, 0.8, 0.45),
+                    shininess: 30,
+                    flatShading: false
+                });
+                
+                const mesh = new THREE.Mesh(geometry, material);
+                mesh.position.y = layer.y;
+                mesh.castShadow = true;
+                mesh.receiveShadow = true;
+                treeGroup.add(mesh);
+            });
+            
+            // 树干
+            const trunkGeometry = new THREE.CylinderGeometry(0.4, 0.6, 2, 16);
+            const trunkMaterial = new THREE.MeshPhongMaterial({ color: 0x4a2f0f });
+            const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
+            trunk.position.y = -1;
+            trunk.castShadow = true;
+            treeGroup.add(trunk);
+            
+            // 树底座
+            const baseGeometry = new THREE.CylinderGeometry(1.5, 2, 0.5, 32);
+            const baseMaterial = new THREE.MeshPhongMaterial({ color: 0x2a1f0f });
+            const base = new THREE.Mesh(baseGeometry, baseMaterial);
+            base.position.y = -2;
+            base.receiveShadow = true;
+            treeGroup.add(base);
+            
+            christmasTree = treeGroup;
+            scene.add(christmasTree);
+        }
+        
+        // ========== 创建星星 ==========
+        function createStar() {
+            const starGroup = new THREE.Group();
+            
+            // 五角星
+            const starShape = new THREE.Shape();
+            const outerRadius = 0.6;
+            const innerRadius = 0.25;
+            
+            for (let i = 0; i < 10; i++) {
+                const radius = i % 2 === 0 ? outerRadius : innerRadius;
+                const angle = (i * Math.PI / 5) - Math.PI / 2;
+                const x = Math.cos(angle) * radius;
+                const y = Math.sin(angle) * radius;
+                
+                if (i === 0) {
+                    starShape.moveTo(x, y);
+                } else {
+                    starShape.lineTo(x, y);
+                }
+            }
+            starShape.closePath();
+            
+            const extrudeSettings = { depth: 0.15, bevelEnabled: true, bevelThickness: 0.05, bevelSize: 0.05 };
+            const starGeometry = new THREE.ExtrudeGeometry(starShape, extrudeSettings);
+            const starMaterial = new THREE.MeshPhongMaterial({
+                color: 0xffd700,
+                emissive: 0xffd700,
+                emissiveIntensity: 0.5,
+                shininess: 100
+            });
+            
+            const starMesh = new THREE.Mesh(starGeometry, starMaterial);
+            starMesh.rotation.x = Math.PI;
+            starGroup.add(starMesh);
+            
+            // 星星发光效果
+            const glowGeometry = new THREE.SphereGeometry(0.8, 16, 16);
+            const glowMaterial = new THREE.MeshBasicMaterial({
+                color: 0xffd700,
+                transparent: true,
+                opacity: 0.15
+            });
+            const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+            starGroup.add(glow);
+            
+            starGroup.position.y = 8.8;
+            star = starGroup;
+            scene.add(starGroup);
+        }
+        
+        // ========== 创建装饰品 ==========
+        function createOrnaments() {
+            const ornamentPositions = [];
+            
+            // 为每层生成装饰位置
+            const layers = [
+                { y: 1.5, radiusRange: [[0.5, 2.5]], count: 8 },
+                { y: 3.5, radiusRange: [[0.3, 2.0]], count: 10 },
+                { y: 5.5, radiusRange: [[0.2, 1.4]], count: 12 },
+                { y: 7.0, radiusRange: [[0.1, 0.8]], count: 8 }
+            ];
+            
+            layers.forEach(layer => {
+                for (let i = 0; i < layer.count; i++) {
+                    const angle = (i / layer.count) * Math.PI * 2 + Math.random() * 0.3;
+                    const radius = layer.radiusRange[0][0] + Math.random() * (layer.radiusRange[0][1] - layer.radiusRange[0][0]);
+                    
+                    ornamentPositions.push({
+                        x: Math.cos(angle) * radius,
+                        y: layer.y + (Math.random() - 0.5) * 0.8,
+                        z: Math.sin(angle) * radius,
+                        color: CONFIG.ornamentColors[Math.floor(Math.random() * CONFIG.ornamentColors.length)],
+                        size: 0.15 + Math.random() * 0.1
+                    });
+                }
+            });
+            
+            ornamentPositions.forEach((pos, index) => {
+                // 装饰球 - 五彩颜色
+                const geometry = new THREE.SphereGeometry(pos.size, 16, 16);
+                const hue = (index * 0.05) % 1;
+                const material = new THREE.MeshPhongMaterial({
+                    color: new THREE.Color().setHSL(hue, 0.9, 0.5),
+                    shininess: 80,
+                    specular: 0xffffff
+                });
+                const ornament = new THREE.Mesh(geometry, material);
+                ornament.position.set(pos.x, pos.y, pos.z);
+                ornament.castShadow = true;
+                
+                // 添加金属环
+                const ringGeometry = new THREE.TorusGeometry(pos.size * 0.3, 0.02, 8, 16);
+                const ringMaterial = new THREE.MeshPhongMaterial({ color: 0xc0c0c0, shininess: 100 });
+                const ring = new THREE.Mesh(ringGeometry, ringMaterial);
+                ring.position.y = pos.size * 0.8;
+                ornament.add(ring);
+                
+                scene.add(ornament);
+                ornaments.push({
+                    mesh: ornament,
+                    originalY: pos.y,
+                    phase: Math.random() * Math.PI * 2
+                });
+            });
+        }
+        
+        // ========== 创建铃铛 ==========
+        function createBells() {
+            const bellGroup = new THREE.Group();
+            const bellCount = 12;
+            const bellOrbitHeights = [0.5, 2, 3.5, 5, 6.5];
+            
+            bellOrbitHeights.forEach((orbitY, orbitIndex) => {
+                for (let i = 0; i < bellCount; i++) {
+                    const bellGeometry = new THREE.SphereGeometry(0.12, 16, 16);
+                    const bellMaterial = new THREE.MeshPhongMaterial({
+                        color: 0xffd700,
+                        shininess: 100,
+                        specular: 0xffffff
+                    });
+                    const bell = new THREE.Mesh(bellGeometry, bellMaterial);
+                    
+                    bell.userData = {
+                        orbitRadius: 5.5 - orbitIndex * 0.8,
+                        orbitSpeed: 0.3 + orbitIndex * 0.08,
+                        orbitY: orbitY,
+                        orbitIndex: orbitIndex,
+                        angle: (i / bellCount) * Math.PI * 2 + orbitIndex * 0.3
+                    };
+                    
+                    bellGroup.add(bell);
+                    bells.push(bell);
+                }
+            });
+            
+            scene.add(bellGroup);
+            return bellGroup;
+        }
+        
+        // ========== 创建灯光 ==========
+        function createLights() {
+            // 环境光
+            const ambientLight = new THREE.AmbientLight(0x404080, 0.4);
+            scene.add(ambientLight);
+            
+            // 主光源
+            const mainLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            mainLight.position.set(5, 10, 5);
+            mainLight.castShadow = true;
+            mainLight.shadow.mapSize.width = 1024;
+            mainLight.shadow.mapSize.height = 1024;
+            scene.add(mainLight);
+            
+            // 顶部点光源（模拟星星发光）
+            const starLight = new THREE.PointLight(0xffd700, 2, 10);
+            starLight.position.set(0, 9, 0);
+            scene.add(starLight);
+            
+            // 彩色氛围灯
+            const colors = [0xff0000, 0x00ff00, 0x0066ff];
+            colors.forEach((color, i) => {
+                const light = new THREE.PointLight(color, 0.5, 15);
+                const angle = (i / colors.length) * Math.PI * 2;
+                light.position.set(Math.cos(angle) * 5, 5, Math.sin(angle) * 5);
+                scene.add(light);
+            });
+
+            // ========== 星系效果 ==========
+            const galaxyGroup = new THREE.Group();
+            
+            // 星系中心发光核心
+            const coreGeometry = new THREE.SphereGeometry(0.8, 32, 32);
+            const coreMaterial = new THREE.MeshBasicMaterial({
+                color: 0xffd700,
+                transparent: true,
+                opacity: 0.9
+            });
+            galaxyCore = new THREE.Mesh(coreGeometry, coreMaterial);
+            galaxyGroup.add(galaxyCore);
+            
+            // 中心光晕
+            for (let i = 0; i < 3; i++) {
+                const glowGeometry = new THREE.SphereGeometry(1 + i * 0.4, 32, 32);
+                const glowMaterial = new THREE.MeshBasicMaterial({
+                    color: new THREE.Color().setHSL(0.12, 1, 0.5 + i * 0.1),
+                    transparent: true,
+                    opacity: 0.3 - i * 0.08,
+                    side: THREE.BackSide
+                });
+                const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+                galaxyGroup.add(glow);
+            }
+            
+            // 螺旋臂粒子
+            const armCount = 5;
+            const particlesPerArm = 60;
+            const maxRadius = 6;
+            
+            for (let arm = 0; arm < armCount; arm++) {
+                for (let i = 0; i < particlesPerArm; i++) {
+                    const progress = i / particlesPerArm;
+                    const radius = progress * maxRadius;
+                    const angleOffset = (arm / armCount) * Math.PI * 2;
+                    const spiralAngle = angleOffset + progress * Math.PI * 3;
+                    
+                    // 粒子大小随距离变化
+                    const particleSize = (1 - progress) * 0.08 + 0.02;
+                    const particleGeometry = new THREE.SphereGeometry(particleSize, 8, 8);
+                    
+                    // 颜色渐变：中心金色 -> 外围蓝色/紫色
+                    const hue = 0.12 - progress * 0.1;
+                    const lightness = 0.5 + progress * 0.3;
+                    const particleMaterial = new THREE.MeshBasicMaterial({
+                        color: new THREE.Color().setHSL(hue, 0.8, lightness),
+                        transparent: true,
+                        opacity: 0.8
+                    });
+                    
+                    const particle = new THREE.Mesh(particleGeometry, particleMaterial);
+                    
+                    // 随机偏移
+                    const randomOffset = (Math.random() - 0.5) * 0.5 * (1 - progress);
+                    
+                    particle.position.x = Math.cos(spiralAngle) * (radius + randomOffset);
+                    particle.position.z = Math.sin(spiralAngle) * (radius + randomOffset);
+                    particle.position.y = (Math.random() - 0.5) * 0.5 * (1 - progress);
+                    
+                    particle.userData = {
+                        baseAngle: spiralAngle,
+                        baseRadius: radius + randomOffset,
+                        height: particle.position.y,
+                        speed: 0.02 + (1 - progress) * 0.03,
+                        arm: arm
+                    };
+                    
+                    galaxyGroup.add(particle);
+                    galaxyParticles.push(particle);
+                }
+            }
+            
+            // 散射星星（背景）
+            const starCount = 100;
+            for (let i = 0; i < starCount; i++) {
+                const starGeometry = new THREE.SphereGeometry(0.03, 4, 4);
+                const starMaterial = new THREE.MeshBasicMaterial({
+                    color: new THREE.Color().setHSL(Math.random() * 0.2 + 0.5, 0.5, 0.8),
+                    transparent: true,
+                    opacity: 0.6
+                });
+                const star = new THREE.Mesh(starGeometry, starMaterial);
+                
+                const angle = Math.random() * Math.PI * 2;
+                const radius = 4 + Math.random() * 8;
+                
+                star.position.x = Math.cos(angle) * radius;
+                star.position.z = Math.sin(angle) * radius;
+                star.position.y = (Math.random() - 0.5) * 8;
+                
+                star.userData = {
+                    baseAngle: angle,
+                    baseRadius: radius,
+                    baseY: star.position.y,
+                    speed: 0.01 + Math.random() * 0.02,
+                    twinkleSpeed: 2 + Math.random() * 3
+                };
+                
+                galaxyGroup.add(star);
+                galaxyStars.push(star);
+            }
+            
+            galaxyGroup.position.y = 3;
+            scene.add(galaxyGroup);
+        }
+        
+        // ========== 创建图片标签 ==========
+        let photoDisplays = [];
+        let photoShowTimer = null;
+        let currentPhotoIndex_3d = 0;
+        
+        function createPhotoDisplay() {
+            const photoCount = 3;
+            
+            for (let i = 0; i < photoCount; i++) {
+                const photoGroup = new THREE.Group();
+                
+                // 图片标签平面
+                const planeGeometry = new THREE.PlaneGeometry(0.5, 0.5);
+                const planeMaterial = new THREE.MeshBasicMaterial({
+                    color: 0xffffff,
+                    transparent: true,
+                    opacity: 0,
+                    side: THREE.DoubleSide
+                });
+                const photoMesh = new THREE.Mesh(planeGeometry, planeMaterial);
+                
+                // 装饰边框
+                const borderGeometry = new THREE.RingGeometry(0.28, 0.3, 32);
+                const borderMaterial = new THREE.MeshBasicMaterial({
+                    color: 0xffd700,
+                    transparent: true,
+                    opacity: 0,
+                    side: THREE.DoubleSide
+                });
+                const border = new THREE.Mesh(borderGeometry, borderMaterial);
+                border.position.z = 0.01;
+                
+                photoGroup.add(photoMesh);
+                photoGroup.add(border);
+                
+                // 初始位置（在树周围）
+                const angle = (i / photoCount) * Math.PI * 2;
+                photoGroup.position.set(
+                    Math.cos(angle) * 1.2,  // x
+                    4,                      // y
+                    Math.sin(angle) * 1.2 + 0.8  // z
+                );
+                photoGroup.rotation.x = 0.3;
+                
+                // 存储引用
+                photoGroup.userData = {
+                    mesh: photoMesh,
+                    border: border,
+                    angle: angle,
+                    baseAngle: angle
+                };
+                
+                christmasTree.add(photoGroup);
+                photoDisplays.push(photoGroup);
+            }
+        }
+        
+        // ========== 单张图片在树上放大显示 ==========
+        let singlePhotoMesh = null;
+        
+        function showSinglePhotoOnTree(imagePath) {
+            if (photoShowTimer) {
+                clearTimeout(photoShowTimer);
+                photoShowTimer = null;
+            }
+            
+            // 移除已存在的单张图片
+            if (singlePhotoMesh) {
+                scene.remove(singlePhotoMesh);
+                singlePhotoMesh.geometry.dispose();
+                singlePhotoMesh.material.dispose();
+                singlePhotoMesh = null;
+            }
+            
+            const textureLoader = new THREE.TextureLoader();
+            
+            textureLoader.load(
+                imagePath,
+                function(texture) {
+                    // 创建图片平面 - 尺寸大到能遮住树
+                    const photoGeometry = new THREE.PlaneGeometry(4, 4);
+                    const photoMaterial = new THREE.MeshBasicMaterial({
+                        map: texture,
+                        transparent: true,
+                        opacity: 1,
+                        side: THREE.DoubleSide
+                    });
+                    
+                    singlePhotoMesh = new THREE.Mesh(photoGeometry, photoMaterial);
+                    
+                    // 放置在相机正前方，遮住树
+                    singlePhotoMesh.position.set(0, 2, 5);
+                    singlePhotoMesh.scale.set(0.01, 0.01, 0.01);
+                    singlePhotoMesh.renderOrder = 9999;
+                    singlePhotoMesh.material.depthTest = false;
+                    
+                    // 添加发光边框
+                    const borderGeometry = new THREE.PlaneGeometry(4.3, 4.3);
+                    const borderMaterial = new THREE.MeshBasicMaterial({
+                        color: 0xffd700,
+                        transparent: true,
+                        opacity: 0.8,
+                        side: THREE.DoubleSide
+                    });
+                    const borderMesh = new THREE.Mesh(borderGeometry, borderMaterial);
+                    borderMesh.position.z = -0.01;
+                    borderMesh.renderOrder = 9999;
+                    borderMesh.material.depthTest = false;
+                    singlePhotoMesh.add(borderMesh);
+                    
+                    scene.add(singlePhotoMesh);
+                    
+                    // 放大动画 - 从很小放大到能遮住树
+                    const startTime = Date.now();
+                    const duration = 800;
+                    const targetScale = 1;
+                    
+                    function animateScale() {
+                        const elapsed = Date.now() - startTime;
+                        const progress = Math.min(elapsed / duration, 1);
+                        const easeProgress = 1 - Math.pow(1 - progress, 3);
+                        
+                        if (singlePhotoMesh) {
+                            singlePhotoMesh.scale.set(
+                                0.01 + (targetScale - 0.01) * easeProgress,
+                                0.01 + (targetScale - 0.01) * easeProgress,
+                                0.01 + (targetScale - 0.01) * easeProgress
+                            );
+                        }
+                        
+                        if (progress < 1) {
+                            requestAnimationFrame(animateScale);
+                        }
+                    }
+                    
+                    animateScale();
+                    
+                    // 3秒后隐藏
+                    photoShowTimer = setTimeout(function() {
+                        if (singlePhotoMesh) {
+                            scene.remove(singlePhotoMesh);
+                            singlePhotoMesh.geometry.dispose();
+                            singlePhotoMesh.material.dispose();
+                            singlePhotoMesh = null;
+                        }
+                        photoShowTimer = null;
+                    }, 3000);
+                },
+                undefined,
+                function(err) {
+                    console.error('加载图片失败:', err);
+                }
+            );
+        }
+        
+        // ========== 显示图片标签 ==========
+        function showPhotoOnTree(imagePaths) {
+            if (photoShowTimer) {
+                clearTimeout(photoShowTimer);
+                photoShowTimer = null;
+            }
+            
+            const textureLoader = new THREE.TextureLoader();
+            
+            // 加载所有图片
+            let loadedCount = 0;
+            const totalPhotos = imagePaths.length;
+            
+            imagePaths.forEach((imagePath, index) => {
+                textureLoader.load(
+                    imagePath,
+                    function(texture) {
+                        if (photoDisplays[index]) {
+                            const photoGroup = photoDisplays[index];
+                            photoGroup.userData.mesh.material.map = texture;
+                            photoGroup.userData.mesh.material.opacity = 1;
+                            photoGroup.userData.mesh.material.needsUpdate = true;
+                            
+                            photoGroup.userData.border.material.opacity = 1;
+                        }
+                        
+                        loadedCount++;
+                        
+                        // 所有图片加载完成后开始动画
+                        if (loadedCount === totalPhotos) {
+                            startPhotoRotationAnimation();
+                        }
+                    },
+                    undefined,
+                    function(err) {
+                        console.error('加载图片失败:', err);
+                        loadedCount++;
+                        if (loadedCount === totalPhotos) {
+                            startPhotoRotationAnimation();
+                        }
+                    }
+                );
+            });
+        }
+        
+        // ========== 图片旋转动画 ==========
+        function startPhotoRotationAnimation() {
+            const startTime = Date.now();
+            const duration = 2000;
+            const rotationRadius = 1.5;
+            
+            function animatePhotoRotation() {
+                const elapsed = Date.now() - startTime;
+                
+                if (elapsed < duration) {
+                    // 围绕树中心旋转
+                    photoDisplays.forEach((photoGroup, index) => {
+                        const userData = photoGroup.userData;
+                        const newAngle = userData.baseAngle + elapsed * 0.003;
+                        
+                        photoGroup.position.x = Math.cos(newAngle) * rotationRadius;
+                        photoGroup.position.z = Math.sin(newAngle) * rotationRadius + 0.8;
+                    });
+                    
+                    requestAnimationFrame(animatePhotoRotation);
+                } else {
+                    // 动画结束，返回默认位置
+                    photoDisplays.forEach((photoGroup, index) => {
+                        const userData = photoGroup.userData;
+                        photoGroup.position.x = Math.cos(userData.baseAngle) * 1.2;
+                        photoGroup.position.z = Math.sin(userData.baseAngle) * 1.2 + 0.8;
+                        
+                        // 隐藏所有图片
+                        photoGroup.userData.mesh.material.opacity = 0;
+                        photoGroup.userData.mesh.material.map = null;
+                        photoGroup.userData.border.material.opacity = 0;
+                    });
+                    
+                    photoShowTimer = null;
+                }
+            }
+            
+            animatePhotoRotation();
+        }
+        
+        // ========== 更新展示的图片 ==========
+        function updatePhotoDisplay(imagePath) {
+            const textureLoader = new THREE.TextureLoader();
+            
+            textureLoader.load(
+                imagePath,
+                function(texture) {
+                    photoDisplayTexture = texture;
+                    if (photoDisplayMesh) {
+                        photoDisplayMesh.material.map = texture;
+                        photoDisplayMesh.material.needsUpdate = true;
+                    }
+                    showPhotoDisplay();
+                },
+                undefined,
+                function(err) {
+                    console.error('加载图片失败:', err);
+                }
+            );
+        }
+        
+        // ========== 显示图片展示 ==========
+        function showPhotoDisplay() {
+            if (photoDisplay) {
+                photoDisplay.visible = true;
+                isPhotoDisplayVisible = true;
+                isPhotoZoomed = false;
+                photoDisplay.scale.set(1, 1, 1);
+            }
+        }
+        
+        // ========== 隐藏图片展示 ==========
+        function hidePhotoDisplay() {
+            if (photoDisplay) {
+                photoDisplay.visible = false;
+                isPhotoDisplayVisible = false;
+                isPhotoZoomed = false;
+            }
+        }
+        
+        // ========== 图片展示点击处理 ==========
+        function onPhotoDisplayClick(event) {
+            event.stopPropagation();
+            
+            photoDisplayClickCount++;
+            
+            if (photoDisplayClickCount === 1) {
+                photoDisplayClickTimer = setTimeout(function() {
+                    photoDisplayClickCount = 0;
+                    
+                    if (isPhotoDisplayVisible) {
+                        if (isPhotoZoomed) {
+                            photoDisplay.scale.set(1, 1, 1);
+                            isPhotoZoomed = false;
+                        } else {
+                            photoDisplay.scale.set(2, 2, 2);
+                            isPhotoZoomed = true;
+                        }
+                    }
+                }, 300);
+            } else if (photoDisplayClickCount === 2) {
+                clearTimeout(photoDisplayClickTimer);
+                photoDisplayClickCount = 0;
+                
+                hidePhotoDisplay();
+            }
+        }
+        
+        // ========== 创建粒子 ==========
+        function createParticles() {
+            const geometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(CONFIG.particleCount * 3);
+            const colors = new Float32Array(CONFIG.particleCount * 3);
+            const sizes = new Float32Array(CONFIG.particleCount);
+            
+            for (let i = 0; i < CONFIG.particleCount; i++) {
+                const i3 = i * 3;
+                
+                // 随机分布在树周围
+                const radius = 4 + Math.random() * 8;
+                const theta = Math.random() * Math.PI * 2;
+                const phi = Math.random() * Math.PI;
+                
+                positions[i3] = radius * Math.sin(phi) * Math.cos(theta);
+                positions[i3 + 1] = (Math.random() - 0.5) * 15;
+                positions[i3 + 2] = radius * Math.sin(phi) * Math.sin(theta);
+                
+                // 白色到金色
+                const color = new THREE.Color();
+                color.setHSL(0.1 + Math.random() * 0.1, 0.8, 0.7 + Math.random() * 0.3);
+                colors[i3] = color.r;
+                colors[i3 + 1] = color.g;
+                colors[i3 + 2] = color.b;
+                
+                sizes[i] = 0.02 + Math.random() * 0.05;
+            }
+            
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+            geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+            
+            const material = new THREE.PointsMaterial({
+                size: 0.08,
+                vertexColors: true,
+                transparent: true,
+                opacity: 0.9,
+                blending: THREE.AdditiveBlending
+            });
+            
+            const particles = new THREE.Points(geometry, material);
+            scene.add(particles);
+            
+            // 存储引用用于动画
+            scene.userData.particles = particles;
+            scene.userData.particlePositions = positions;
+            scene.userData.particleGeometry = geometry;
+            
+            // 保存原始位置
+            originalParticlePositions = new Float32Array(positions);
+        }
+        
+        // ========== 创建雪花 ==========
+        function createSnow() {
+            const snowContainer = document.getElementById('snow-container');
+            
+            for (let i = 0; i < 80; i++) {
+                createSnowflake(snowContainer, i);
+            }
+        }
+        
+        function createSnowflake(container, index) {
+            const snowflake = document.createElement('div');
+            snowflake.className = 'snowflake';
+            snowflake.innerHTML = '❄';
+            snowflake.style.left = Math.random() * 100 + '%';
+            snowflake.style.animationDuration = (6 + Math.random() * 8) + 's';
+            snowflake.style.animationDelay = Math.random() * 5 + 's';
+            snowflake.style.fontSize = (8 + Math.random() * 10) + 'px';
+            snowflake.dataset.index = index;
+            snowflake.dataset.originalLeft = snowflake.style.left;
+            snowflake.dataset.speed = parseFloat(snowflake.style.animationDuration);
+            snowflake.dataset.delay = parseFloat(snowflake.style.animationDelay);
+            snowflake.dataset.exploded = 'false';
+            
+            // 雪花点击爆炸
+            snowflake.addEventListener('click', (e) => {
+                e.stopPropagation();
+                explodeSnowflake(snowflake);
+            });
+            
+            // 监听动画结束（雪花落地）
+            snowflake.addEventListener('animationiteration', (e) => {
+                // 雪花重新开始下落时，不做处理
+            });
+            
+            // 监听动画结束（一次性动画）
+            snowflake.addEventListener('animationend', (e) => {
+                if (snowflake.dataset.exploded === 'false' && snowflake.parentElement) {
+                    // 雪花落到最底下，爆炸成多个小雪花
+                    explodeOnGround(snowflake, container);
+                }
+            });
+            
+            container.appendChild(snowflake);
+            snowflakes.push(snowflake);
+        }
+        
+        // 雪花落地爆炸
+        function explodeOnGround(snowflake, container) {
+            if (!snowflake.parentElement) return;
+            
+            const rect = snowflake.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = window.innerHeight - 50;
+            
+            // 创建多个小雪花
+            const miniCount = 5 + Math.floor(Math.random() * 5);
+            
+            for (let i = 0; i < miniCount; i++) {
+                const miniFlake = document.createElement('div');
+                miniFlake.className = 'snowflake';
+                miniFlake.innerHTML = '❄';
+                miniFlake.style.left = (centerX / window.innerWidth * 100) + '%';
+                miniFlake.style.top = (window.innerHeight - 80) + 'px';
+                miniFlake.style.fontSize = (4 + Math.random() * 4) + 'px';
+                miniFlake.style.animation = 'none';
+                miniFlake.style.opacity = '1';
+                miniFlake.style.transition = 'all 0.5s ease-out';
+                miniFlake.dataset.exploded = 'true';
+                
+                container.appendChild(miniFlake);
+                
+                // 小雪花飞散效果
+                setTimeout(() => {
+                    const angle = (Math.random() * Math.PI) + Math.PI; // 向四周散开
+                    const distance = 50 + Math.random() * 100;
+                    const endX = Math.cos(angle) * distance;
+                    const endY = -Math.random() * 150 - 50;
+                    
+                    miniFlake.style.left = ((centerX + endX) / window.innerWidth * 100) + '%';
+                    miniFlake.style.top = (window.innerHeight + endY) + 'px';
+                    miniFlake.style.opacity = '0';
+                    miniFlake.style.transform = 'scale(0) rotate(180deg)';
+                }, 10);
+                
+                // 移除小雪花
+                setTimeout(() => {
+                    if (miniFlake.parentElement) {
+                        miniFlake.remove();
+                    }
+                }, 600);
+            }
+            
+            // 移除原雪花
+            const originalLeft = snowflake.dataset.originalLeft;
+            snowflake.remove();
+            
+            // 创建新雪花补充
+            setTimeout(() => {
+                if (container) {
+                    createSnowflake(container, Date.now());
+                }
+            }, 500);
+        }
+        
+        // 雪花爆炸效果（点击）
+        function explodeSnowflake(snowflake) {
+            if (snowflakesExploded) {
+                resetSnowflakes();
+                return;
+            }
+            
+            snowflakesExploded = true;
+            const container = document.getElementById('snow-container');
+            const rect = snowflake.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+            
+            // 创建爆炸粒子效果
+            const particleCount = 30;
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.innerHTML = '❄';
+                particle.style.position = 'fixed';
+                particle.style.left = centerX + 'px';
+                particle.style.top = centerY + 'px';
+                particle.style.fontSize = (6 + Math.random() * 12) + 'px';
+                particle.style.color = 'rgba(255, 255, 255, ' + (0.6 + Math.random() * 0.4) + ')';
+                particle.style.pointerEvents = 'none';
+                particle.style.zIndex = '999';
+                particle.style.transition = 'all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+                
+                container.appendChild(particle);
+                
+                // 向四周飞散
+                setTimeout(() => {
+                    const angle = (Math.random() * Math.PI * 2);
+                    const distance = 100 + Math.random() * 200;
+                    const spreadX = Math.cos(angle) * distance;
+                    const spreadY = Math.sin(angle) * distance - 50;
+                    
+                    particle.style.left = (centerX + spreadX) + 'px';
+                    particle.style.top = (centerY + spreadY) + 'px';
+                    particle.style.opacity = '0';
+                    particle.style.transform = 'scale(0) rotate(' + (Math.random() * 360) + 'deg)';
+                }, 10);
+                
+                // 移除粒子
+                setTimeout(() => {
+                    if (particle.parentElement) {
+                        particle.remove();
+                    }
+                }, 700);
+            }
+            
+            // 闪光效果
+            const flash = document.createElement('div');
+            flash.style.position = 'fixed';
+            flash.style.left = centerX + 'px';
+            flash.style.top = centerY + 'px';
+            flash.style.width = '10px';
+            flash.style.height = '10px';
+            flash.style.background = 'radial-gradient(circle, rgba(255,255,255,1) 0%, rgba(255,255,255,0) 70%)';
+            flash.style.borderRadius = '50%';
+            flash.style.transform = 'translate(-50%, -50%)';
+            flash.style.pointerEvents = 'none';
+            flash.style.zIndex = '998';
+            flash.style.transition = 'all 0.3s ease-out';
+            container.appendChild(flash);
+            
+            setTimeout(() => {
+                flash.style.width = '300px';
+                flash.style.height = '300px';
+                flash.style.opacity = '0';
+            }, 10);
+            
+            setTimeout(() => {
+                if (flash.parentElement) {
+                    flash.remove();
+                }
+            }, 400);
+            
+            // 所有雪花向外扩散
+            snowflakes.forEach((flake, index) => {
+                setTimeout(() => {
+                    if (!flake.parentElement) return;
+                    
+                    const flakeRect = flake.getBoundingClientRect();
+                    const flakeX = flakeRect.left + flakeRect.width / 2;
+                    const flakeY = flakeRect.top + flakeRect.height / 2;
+                    
+                    const angle = Math.atan2(flakeY - centerY, flakeX - centerX);
+                    const distance = 150 + Math.random() * 200;
+                    const endX = Math.cos(angle) * distance;
+                    const endY = Math.sin(angle) * distance;
+                    
+                    flake.style.animation = 'none';
+                    flake.style.transition = 'all 0.5s ease-out';
+                    
+                    const currentX = parseFloat(flake.style.left);
+                    flake.style.left = (currentX + endX / window.innerWidth * 100) + '%';
+                    flake.style.top = (flakeY + endY) + 'px';
+                    flake.style.opacity = '0';
+                    flake.style.transform = 'scale(0) rotate(180deg)';
+                }, index * 15);
+            });
+        }
+        
+        // 重置雪花
+        function resetSnowflakes() {
+            snowflakesExploded = false;
+            
+            // 清除所有雪花
+            snowflakes.forEach(flake => {
+                if (flake.parentElement) {
+                    flake.remove();
+                }
+            });
+            snowflakes = [];
+            
+            // 重新创建雪花
+            const snowContainer = document.getElementById('snow-container');
+            if (snowContainer) {
+                for (let i = 0; i < 80; i++) {
+                    createSnowflake(snowContainer, Date.now() + i);
+                }
+            }
+        }
+        
+        // ========== 事件监听 ==========
+        function setupEventListeners() {
+            // 鼠标/触摸开始
+            const onStart = (x, y) => {
+                isDragging = true;
+                previousMousePosition = { x, y };
+            };
+            
+            // 鼠标/触摸移动
+            const onMove = (x, y) => {
+                if (!isDragging) return;
+                
+                const deltaX = x - previousMousePosition.x;
+                const deltaY = y - previousMousePosition.y;
+                
+                targetRotation.y += deltaX * 0.005;
+                targetRotation.x += deltaY * 0.005;
+                targetRotation.x = Math.max(-Math.PI / 3, Math.min(Math.PI / 3, targetRotation.x));
+                
+                previousMousePosition = { x, y };
+            };
+            
+            // 鼠标/触摸结束
+            const onEnd = () => {
+                isDragging = false;
+            };
+            
+            // 鼠标事件
+            renderer.domElement.addEventListener('mousedown', (e) => onStart(e.clientX, e.clientY));
+            renderer.domElement.addEventListener('mousemove', (e) => onMove(e.clientX, e.clientY));
+            renderer.domElement.addEventListener('mouseup', onEnd);
+            renderer.domElement.addEventListener('mouseleave', onEnd);
+            
+            // 滚轮缩放
+            renderer.domElement.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                targetCameraDistance += e.deltaY * 0.01;
+                targetCameraDistance = Math.max(5, Math.min(25, targetCameraDistance));
+            }, { passive: false });
+            
+            // 点击粒子爆炸
+            renderer.domElement.addEventListener('click', onParticleClick);
+            renderer.domElement.addEventListener('touchend', (e) => {
+                if (e.changedTouches.length === 1) {
+                    const touch = e.changedTouches[0];
+                    onParticleClick({
+                        clientX: touch.clientX,
+                        clientY: touch.clientY
+                    });
+                }
+                onEnd();
+            });
+            
+            // 触摸事件
+            renderer.domElement.addEventListener('touchstart', (e) => {
+                if (e.touches.length === 1) {
+                    onStart(e.touches[0].clientX, e.touches[0].clientY);
+                } else if (e.touches.length === 2) {
+                    photoPinchStartDistance = Math.hypot(
+                        e.touches[0].clientX - e.touches[1].clientX,
+                        e.touches[0].clientY - e.touches[1].clientY
+                    );
+                    photoInitialScale = photoScale;
+                }
+            });
+            
+            renderer.domElement.addEventListener('touchmove', (e) => {
+                e.preventDefault();
+                if (e.touches.length === 1) {
+                    onMove(e.touches[0].clientX, e.touches[0].clientY);
+                } else if (e.touches.length === 2) {
+                    const currentDistance = Math.hypot(
+                        e.touches[0].clientX - e.touches[1].clientX,
+                        e.touches[0].clientY - e.touches[1].clientY
+                    );
+                    const scale = (currentDistance / photoPinchStartDistance) * photoInitialScale;
+                    photoScale = Math.max(0.5, Math.min(3, scale));
+                    updatePhotoScale();
+                }
+            }, { passive: false });
+            
+            renderer.domElement.addEventListener('touchend', onEnd);
+            
+            // 照片点击事件 - 双击在树上放大显示单张图片
+            let photoClickCount = 0;
+            let photoClickTimer = null;
+            
+            document.querySelectorAll('.gallery-photo').forEach((photo, index) => {
+                photo.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    photoClickCount++;
+                    
+                    if (photoClickCount === 1) {
+                        photoClickTimer = setTimeout(function() {
+                            photoClickCount = 0;
+                        }, 350);
+                    } else if (photoClickCount === 2) {
+                        clearTimeout(photoClickTimer);
+                        photoClickCount = 0;
+                        
+                        // 显示单张图片在树上放大
+                        showSinglePhotoOnTree(CONFIG.photos[index]);
+                    }
+                });
+            });
+            
+            // 照片双击放大功能
+            setupPhotoZoom();
+            
+            // 键盘事件
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    closePhotoModal();
+                }
+                if (e.key === 'ArrowLeft') {
+                    navigatePhoto(-1);
+                }
+                if (e.key === 'ArrowRight') {
+                    navigatePhoto(1);
+                }
+                if (e.key === '+' || e.key === '=') {
+                    photoScale = Math.min(3, photoScale + 0.2);
+                    updatePhotoScale();
+                }
+                if (e.key === '-') {
+                    photoScale = Math.max(0.5, photoScale - 0.2);
+                    updatePhotoScale();
+                }
+            });
+            
+            // 鼠标滚轮缩放
+            document.addEventListener('wheel', (e) => {
+                if (document.getElementById('photo-modal').classList.contains('active')) {
+                    e.preventDefault();
+                    photoScale += e.deltaY * -0.001;
+                    photoScale = Math.max(0.5, Math.min(3, photoScale));
+                    updatePhotoScale();
+                }
+            }, { passive: false });
+            
+            // 窗口调整
+            window.addEventListener('resize', onWindowResize);
+            
+            // 关闭按钮点击事件
+            document.getElementById('close-btn').addEventListener('click', function(e) {
+                e.stopPropagation();
+                closePhotoModal();
+            });
+            
+            // 音乐控制
+            setupMusicControl();
+        }
+        
+        // 图片双击放大功能
+        function setupPhotoZoom() {
+            const modalPhotoEl = document.getElementById('modal-photo');
+            const photoContainer = document.getElementById('photo-container');
+            const photoModal = document.getElementById('photo-modal');
+            const zoomHint = document.getElementById('zoom-hint');
+            
+            let isZoomed = false;
+            let clickCount = 0;
+            let clickTimer = null;
+            
+            // 调试：测试点击
+            modalPhotoEl.addEventListener('click', function(e) {
+                console.log('图片被点击了');
+            });
+            
+            // 双击图片放大
+            modalPhotoEl.addEventListener('dblclick', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('双击图片，切换放大状态');
+                
+                isZoomed = !isZoomed;
+                
+                if (isZoomed) {
+                    photoContainer.style.position = 'fixed';
+                    photoContainer.style.top = '0';
+                    photoContainer.style.left = '0';
+                    photoContainer.style.width = '100vw';
+                    photoContainer.style.height = '100vh';
+                    photoContainer.style.backgroundColor = '#000';
+                    photoContainer.style.zIndex = '2147483647';
+                    photoContainer.style.overflow = 'hidden';
+                    
+                    modalPhotoEl.style.width = '100vw';
+                    modalPhotoEl.style.height = '100vh';
+                    modalPhotoEl.style.objectFit = 'contain';
+                    modalPhotoEl.style.transform = 'none';
+                    modalPhotoEl.style.borderRadius = '0';
+                    modalPhotoEl.style.boxShadow = 'none';
+                    
+                    const heartBorder = photoContainer.querySelector('.heart-border');
+                    if (heartBorder) heartBorder.style.display = 'none';
+                    
+                    zoomHint.style.display = 'block';
+                } else {
+                    photoContainer.style.position = '';
+                    photoContainer.style.top = '';
+                    photoContainer.style.left = '';
+                    photoContainer.style.width = '';
+                    photoContainer.style.height = '';
+                    photoContainer.style.backgroundColor = '';
+                    photoContainer.style.zIndex = '';
+                    
+                    modalPhotoEl.style.width = '';
+                    modalPhotoEl.style.height = '';
+                    modalPhotoEl.style.objectFit = '';
+                    modalPhotoEl.style.transform = '';
+                    modalPhotoEl.style.borderRadius = '';
+                    modalPhotoEl.style.boxShadow = '';
+                    
+                    const heartBorder = photoContainer.querySelector('.heart-border');
+                    if (heartBorder) heartBorder.style.display = '';
+                    
+                    zoomHint.style.display = 'none';
+                }
+            });
+            
+            // 点击容器也阻止冒泡
+            photoContainer.addEventListener('click', function(e) {
+                e.stopPropagation();
+            });
+            
+            // 点击模态框背景关闭
+            photoModal.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    if (isZoomed) {
+                        photoContainer.style.position = '';
+                        photoContainer.style.top = '';
+                        photoContainer.style.left = '';
+                        photoContainer.style.width = '';
+                        photoContainer.style.height = '';
+                        photoContainer.style.backgroundColor = '';
+                        photoContainer.style.zIndex = '';
+                        
+                        modalPhotoEl.style.width = '';
+                        modalPhotoEl.style.height = '';
+                        modalPhotoEl.style.objectFit = '';
+                        modalPhotoEl.style.transform = '';
+                        modalPhotoEl.style.borderRadius = '';
+                        modalPhotoEl.style.boxShadow = '';
+                        
+                        const heartBorder = photoContainer.querySelector('.heart-border');
+                        if (heartBorder) heartBorder.style.display = '';
+                        
+                        zoomHint.style.display = 'none';
+                        isZoomed = false;
+                    } else {
+                        closePhotoModal();
+                    }
+                }
+            });
+        }
+        
+        // 音乐控制功能
+        function setupMusicControl() {
+            const musicBtn = document.getElementById('music-btn');
+            const bgm = document.getElementById('bgm');
+            let isMusicPlaying = false;
+            
+            bgm.volume = 0.5;
+            
+            musicBtn.onclick = function() {
+                if (isMusicPlaying) {
+                    bgm.pause();
+                    this.textContent = '🔇';
+                    this.classList.remove('music-playing');
+                    this.classList.add('music-paused');
+                    isMusicPlaying = false;
+                } else {
+                    bgm.play().then(() => {
+                        this.textContent = '🎵';
+                        this.classList.remove('music-paused');
+                        this.classList.add('music-playing');
+                        isMusicPlaying = true;
+                    }).catch(e => {
+                        console.log('播放失败:', e);
+                    });
+                }
+            };
+            
+            // 页面点击任意位置播放音乐
+            document.addEventListener('click', function() {
+                if (!isMusicPlaying && !bgm.paused === false) {
+                    bgm.play().then(() => {
+                        musicBtn.textContent = '🎵';
+                        musicBtn.classList.remove('music-paused');
+                        musicBtn.classList.add('music-playing');
+                        isMusicPlaying = true;
+                    }).catch(e => {});
+                }
+            }, { once: true });
+            
+            // 页面加载后尝试播放
+            setTimeout(() => {
+                bgm.play().then(() => {
+                    musicBtn.textContent = '🎵';
+                    musicBtn.classList.remove('music-paused');
+                    musicBtn.classList.add('music-playing');
+                    isMusicPlaying = true;
+                }).catch(e => {});
+            }, 500);
+        }
+        
+        // 点击粒子爆炸或树加速
+        function onParticleClick(event) {
+            // 计算鼠标位置
+            const rect = renderer.domElement.getBoundingClientRect();
+            mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+            mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+            
+            raycaster.setFromCamera(mouse, camera);
+            
+            // 检测是否点击到图片展示
+            if (photoDisplay && photoDisplay.visible) {
+                const photoIntersects = raycaster.intersectObject(photoDisplayMesh, true);
+                if (photoIntersects.length > 0) {
+                    onPhotoDisplayClick(event);
+                    return;
+                }
+            }
+            
+            // 检测是否点击到树
+            const treeIntersects = raycaster.intersectObject(christmasTree, true);
+            
+            if (treeIntersects.length > 0) {
+                // 点击到树，加速旋转
+                targetTreeRotationSpeed = 8;
+                setTimeout(() => {
+                    targetTreeRotationSpeed = 2.5;
+                }, 2000);
+            } else {
+                // 点击其他区域，粒子爆炸
+                if (particlesExploded) {
+                    resetParticles();
+                } else {
+                    explodeParticles();
+                }
+            }
+        }
+        
+        function explodeParticles() {
+            particlesExploded = true;
+            explosionProgress = 0;
+            explosionCenter.set(0, 4, 0);
+        }
+        
+        function resetParticles() {
+            particlesExploded = false;
+            explosionProgress = 0;
+        }
+        
+        function updateExplosion() {
+            if (!particlesExploded && explosionProgress >= 1) return;
+            
+            const positions = scene.userData.particleGeometry.attributes.position.array;
+            
+            if (particlesExploded) {
+                explosionProgress += 0.02;
+                const easeProgress = Math.pow(explosionProgress, 0.5);
+                
+                for (let i = 0; i < CONFIG.particleCount; i++) {
+                    const i3 = i * 3;
+                    const originalX = originalParticlePositions[i3];
+                    const originalY = originalParticlePositions[i3 + 1];
+                    const originalZ = originalParticlePositions[i3 + 2];
+                    
+                    const dirX = originalX - explosionCenter.x;
+                    const dirY = originalY - explosionCenter.y;
+                    const dirZ = originalZ - explosionCenter.z;
+                    const dist = Math.sqrt(dirX * dirX + dirY * dirY + dirZ * dirZ) || 1;
+                    
+                    const explodeDistance = 8 + Math.random() * 4;
+                    
+                    positions[i3] = originalX + (dirX / dist) * explodeDistance * easeProgress;
+                    positions[i3 + 1] = originalY + (dirY / dist) * explodeDistance * easeProgress + easeProgress * 2;
+                    positions[i3 + 2] = originalZ + (dirZ / dist) * explodeDistance * easeProgress;
+                }
+            } else if (explosionProgress > 0 && explosionProgress < 1) {
+                explosionProgress += 0.03;
+                const easeProgress = 1 - Math.pow(1 - explosionProgress, 3);
+                
+                for (let i = 0; i < CONFIG.particleCount; i++) {
+                    const i3 = i * 3;
+                    const originalX = originalParticlePositions[i3];
+                    const originalY = originalParticlePositions[i3 + 1];
+                    const originalZ = originalParticlePositions[i3 + 2];
+                    
+                    positions[i3] = originalX * (1 - easeProgress);
+                    positions[i3 + 1] = originalY * (1 - easeProgress);
+                    positions[i3 + 2] = originalZ * (1 - easeProgress);
+                }
+            }
+            
+            scene.userData.particleGeometry.attributes.position.needsUpdate = true;
+        }
+        
+        function openPhotoModal(index) {
+            currentPhotoIndex = index;
+            
+            const modal = document.getElementById('photo-modal');
+            const modalPhoto = document.getElementById('modal-photo');
+            const photoContainer = document.getElementById('photo-container');
+            
+            console.log('openPhotoModal called, index:', index);
+            console.log('modal element:', modal);
+            console.log('modalPhoto element:', modalPhoto);
+            
+            photoScale = 1;
+            modalPhoto.classList.remove('fullscreen');
+            modalPhoto.style.transform = 'scale(1)';
+            modalPhoto.src = CONFIG.photos[currentPhotoIndex];
+            
+            document.getElementById('photo-count').textContent = `${currentPhotoIndex + 1} / ${CONFIG.photos.length}`;
+            
+            document.querySelectorAll('.gallery-photo').forEach((photo, i) => {
+                photo.classList.toggle('active', i === currentPhotoIndex);
+            });
+            
+            modal.classList.add('active');
+            modal.style.display = 'flex';
+            modal.style.opacity = '1';
+            
+            window.currentModalPhoto = modalPhoto;
+        }
+        
+        function closePhotoModal() {
+            var modalPhoto = document.getElementById('modal-photo');
+            modalPhoto.classList.remove('fullscreen');
+            photoScale = 1;
+            document.getElementById('photo-modal').classList.remove('active');
+        }
+        
+        function updateModalPhoto() {
+            const modalPhoto = document.getElementById('modal-photo');
+            const count = document.getElementById('photo-count');
+            
+            modalPhoto.src = CONFIG.photos[currentPhotoIndex];
+            modalPhoto.classList.remove('show');
+            setTimeout(() => modalPhoto.classList.add('show'), 50);
+            
+            count.textContent = `${currentPhotoIndex + 1} / ${CONFIG.photos.length}`;
+            
+            // 更新选中状态
+            document.querySelectorAll('.gallery-photo').forEach((photo, i) => {
+                photo.classList.toggle('active', i === currentPhotoIndex);
+            });
+        }
+        
+        function navigatePhoto(direction) {
+            currentPhotoIndex = (currentPhotoIndex + direction + CONFIG.photos.length) % CONFIG.photos.length;
+            updateModalPhoto();
+        }
+        
+        function updatePhotoScale() {
+            const modalPhoto = document.getElementById('modal-photo');
+            modalPhoto.style.transform = `scale(${photoScale})`;
+        }
+        
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+        
+        function hideLoading() {
+            setTimeout(() => {
+                document.getElementById('loading').classList.add('hidden');
+                startBgSlideshow();
+            }, 1000);
+        }
+
+        function startBgSlideshow() {
+            let currentBgIndex = 0;
+            const bgImages = document.querySelectorAll('.bg-image');
+            
+            setInterval(() => {
+                bgImages[currentBgIndex].classList.remove('active');
+                currentBgIndex = (currentBgIndex + 1) % bgImages.length;
+                bgImages[currentBgIndex].classList.add('active');
+            }, 3000);
+        }
+        
+        // ========== 动画循环 ==========
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            const time = Date.now() * 0.001;
+            
+            // 自动旋转时间
+            autoRotateTime += 0.01;
+            
+            // 平滑相机移动
+            cameraDistance += (targetCameraDistance - cameraDistance) * 0.05;
+            camera.position.z = cameraDistance;
+            
+            // 平滑旋转
+            currentRotation.x += (targetRotation.x - currentRotation.x) * 0.05;
+            currentRotation.y += (targetRotation.y - currentRotation.y) * 0.05;
+            
+            // 平滑旋转速度
+            treeRotationSpeed += (targetTreeRotationSpeed - treeRotationSpeed) * 0.02;
+            
+            // 圣诞树一直保持自动旋转
+            if (christmasTree) {
+                christmasTree.rotation.y = autoRotateTime * treeRotationSpeed + currentRotation.y * 0.3;
+                christmasTree.rotation.x = currentRotation.x * 0.3;
+            }
+            
+            // 星星旋转和脉动 - 立起来并自转
+            if (star) {
+                // 重置星星方向使其立起来
+                star.rotation.x = 0;
+                star.rotation.z = 0;
+                
+                // 让星星围绕自身垂直轴旋转
+                star.rotation.y += 0.02;
+                
+                // 保持脉动效果
+                const scale = 1 + Math.sin(time * 3) * 0.1;
+                star.scale.set(scale, scale, scale);
+            }
+            
+            // 装饰品摇摆
+            ornaments.forEach(ornament => {
+                ornament.mesh.rotation.y += 0.02;
+                ornament.mesh.position.y = ornament.originalY + Math.sin(time * 2 + ornament.phase) * 0.05;
+            });
+            
+            // 铃铛环绕旋转
+            bells.forEach(bell => {
+                bell.userData.angle += bell.userData.orbitSpeed * 0.02;
+                bell.position.x = Math.cos(bell.userData.angle) * bell.userData.orbitRadius;
+                bell.position.z = Math.sin(bell.userData.angle) * bell.userData.orbitRadius;
+                bell.position.y = bell.userData.orbitY + Math.sin(time * 3 + bell.userData.angle) * 0.3;
+            });
+            
+            // 星系螺旋臂旋转
+            galaxyParticles.forEach(particle => {
+                const data = particle.userData;
+                const currentAngle = data.baseAngle + time * data.speed;
+                
+                particle.position.x = Math.cos(currentAngle) * data.baseRadius;
+                particle.position.z = Math.sin(currentAngle) * data.baseRadius;
+                particle.position.y = data.height + Math.sin(time * 2 + data.arm) * 0.2;
+                
+                // 闪烁效果
+                particle.material.opacity = 0.5 + Math.sin(time * 3 + data.baseRadius) * 0.3;
+            });
+            
+            // 背景星星闪烁
+            galaxyStars.forEach(star => {
+                const data = star.userData;
+                data.baseAngle += data.speed * 0.01;
+                
+                star.position.x = Math.cos(data.baseAngle) * data.baseRadius;
+                star.position.z = Math.sin(data.baseAngle) * data.baseRadius;
+                star.position.y = data.baseY;
+                
+                // 闪烁效果
+                star.material.opacity = 0.3 + Math.sin(time * data.twinkleSpeed) * 0.3;
+            });
+            
+            // 星系核心脉动
+            if (galaxyCore) {
+                const coreScale = 1 + Math.sin(time * 2) * 0.1;
+                galaxyCore.scale.set(coreScale, coreScale, coreScale);
+            }
+            
+            // 粒子旋转
+            if (scene.userData.particles && !particlesExploded) {
+                scene.userData.particles.rotation.y += 0.001;
+            }
+            
+            // 相机轻微上下浮动
+            camera.position.y = 3 + Math.sin(time * 0.5) * 0.3;
+            
+            // 更新爆炸动画
+            updateExplosion();
+            
+            renderer.render(scene, camera);
+        }
+        
+        // 启动
+        init();
+    </script>
+</body>
+</html>
